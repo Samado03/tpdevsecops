@@ -72,3 +72,36 @@ jobs:
           format: 'table'
           exit-code: '1'
           severity: 'CRITICAL,HIGH'
+
+
+            # Scan lisible dans les logs (ne bloque pas)
+      - name: Scan Docker image with Trivy (table)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ env.DOCKER_IMAGE_NAME }}
+          format: 'table'
+          exit-code: '0'
+          severity: 'CRITICAL,HIGH'
+
+      # Rapport SARIF + échec si CRITICAL/HIGH
+      - name: Scan Docker image with Trivy (SARIF report)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ env.DOCKER_IMAGE_NAME }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH'
+
+      # Sauvegarde du rapport Trivy
+      - name: Upload Trivy report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-report
+          path: trivy-results.sarif
+
+
+      - name: Push Docker image
+        if: github.event_name == 'push'
+        run: docker push $DOCKER_IMAGE_NAME
