@@ -25,6 +25,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      -      # Upload the Gitleaks report
+      - name: Upload Gitleaks report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gitleaks-report
+          path: results.sarif
+
 
       # 2. Installer Java (JDK 21 - Temurin)
       - name: Set up JDK 21
@@ -56,3 +64,11 @@ jobs:
           file: Dockerfile
           push: true
           tags: ${{ env.DOCKER_IMAGE_NAME }}
+
+      - name: Scan Docker image with Trivy
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ env.DOCKER_IMAGE_NAME }}
+          format: 'table'
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH'
